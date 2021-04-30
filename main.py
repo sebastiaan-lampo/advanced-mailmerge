@@ -8,6 +8,7 @@ import pandas as pd
 import docx
 import logging
 import numpy as np
+from docx.shared import RGBColor
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('playbook')
@@ -132,22 +133,25 @@ def add_tasks(doc, df):
 
         tbl = doc.add_table(rows=3, cols=5)
         tbl.style = 'Table Grid'  # 'Light Shading Accent 1'
-        tbl.cell(0, 0).text = "Goal:"
+        tbl.cell(0, 0).text = "Goal"
         tbl.cell(0, 0).paragraphs[0].runs[0].font.bold = True
         tbl.cell(0, 1).merge(tbl.cell(0, 4))
         tbl.cell(0, 1).text = df.loc[i, "Goal / Risk"]
         tbl.cell(0, 1).paragraphs[0].runs[0].font.bold = True
-        tbl.cell(1, 0).text = "Objective:"
+        tbl.cell(1, 0).text = "Objective"
         tbl.cell(1, 1).merge(tbl.cell(1, 4))
         tbl.cell(1, 1).text = df.loc[i, "Objective"]
         tbl.cell(2, 0).merge(tbl.cell(2, 4))
         tbl.cell(2, 0).text = "Tasks and RACI"
 
-        set_cell_color(tbl.cell(0, 0), '2F5496', 'FFFFFF')
-        set_cell_color(tbl.cell(0, 1), '2F5496', 'FFFFFF')
-        set_cell_color(tbl.cell(1, 0), '4B84E8', 'FFFFFF')
-        set_cell_color(tbl.cell(1, 1), '4B84E8', 'FFFFFF')
+        set_cell_color(tbl.cell(0, 0), '2F5496')
+        set_cell_color(tbl.cell(0, 1), '2F5496')
+        set_cell_color(tbl.cell(1, 0), '4B84E8')
+        set_cell_color(tbl.cell(1, 1), '4B84E8')
         set_cell_color(tbl.cell(2, 0), 'BDBDBD')
+        for _ in range(2):
+            for __ in range(2):
+                tbl.cell(_, __).paragraphs[0].runs[0].font.color.rgb = RGBColor(0xff, 0xff, 0xff)
 
         tbl = add_single_task_layout(tbl, df.iloc[i, :])
 
@@ -159,6 +163,9 @@ def add_tasks(doc, df):
         except KeyError:  # End of the table.
             pass
         i += n
+
+        for r in tbl.rows:
+            r.AllowBreakAcrossPages = False
 
         # widths = [2, 5, 5, 2, 1]
         # for _, w in enumerate(widths):
@@ -267,4 +274,4 @@ if __name__ == '__main__':
     doc.save('playbook.docx')
 
     # extract_comments('playbook_wkt.xlsx')
-    # new_info_only_sheet('playbook_new.xlsx', df)
+    new_info_only_sheet('playbook_new.xlsx', df_wkt)
