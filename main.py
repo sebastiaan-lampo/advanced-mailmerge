@@ -191,11 +191,18 @@ def add_tasks(doc, df):
 def new_info_only_sheet(filename, df):
     # from openpyxl import load_workbook
 
-    df = df.set_index(keys='Reference #')
+    # df = df.set_index(keys='Reference #')
     different = df[df.ne(df.shift())]
-    for c in ['Senior Design Lead', 'AM Construction', 'Asset Information Coordinator', 'ARQ']:
-        different[c] = df.loc[:, c]
-    with pd.ExcelWriter(filename, mode='a') as writer:
+    # for c in ['Senior Design Lead', 'AM Construction', 'Asset Information Coordinator', 'ARQ']:
+    #     different[c] = df.loc[:, c]
+
+    # Last 4/5 columns should be carried entirely, they are the RACI. Adjust number as needed.
+    # NOT RELIABLE. Columns could be ordered differently.
+    for c in range(5):
+        different.iloc[:, different.shape[1] - c-1] = df.iloc[:, different.shape[1] - c-1]
+
+    logger.info(different.columns.values)
+    with pd.ExcelWriter(filename, mode='w') as writer:
         different.to_excel(writer, sheet_name='detail_grouped')
 
 
