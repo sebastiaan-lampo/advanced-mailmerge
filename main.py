@@ -45,6 +45,11 @@ def add_acronyms(doc, df, lookup):
                 for a in res:
                     acronyms.add(a)
     acronyms = sorted(acronyms)
+    for a in acronyms:
+        try:
+            acronyms.remove(f'{a}s')  # remove plurals
+        except ValueError:
+            pass
     logger.debug(f'Acronyms: {acronyms}')
 
     doc.add_heading('Acronyms')
@@ -222,7 +227,7 @@ def new_info_only_sheet(filename, df):
 
     # df = df.set_index(keys='Reference #')
     different = df[df.ne(df.shift())]
-    for c in ['Senior AM', 'AM Tech PM', 'Asset Information Coordinator', 'ARQTS']:
+    for c in ['Contract model considerations', 'Senior AM', 'AM Tech PM', 'Asset Information Coordinator', 'ARQTS']:
         different[c] = df.loc[:, c]
 
     # Last 4/5 columns should be carried entirely, they are the RACI. Adjust number as needed.
@@ -304,7 +309,7 @@ if __name__ == '__main__':
     doc = docx.Document()
     # doc.styles.add_style('cell reference', WD_STYLE_TYPE.PARAGRAPH)
     doc = add_acronyms(doc, df_wkt, lookup=acronyms)
-    doc = add_defined_terms(doc, df)
+    doc = add_defined_terms(doc, df_wkt)
     doc = add_comments(doc, df_wkt, extract_comments('playbook_wkt.xlsx'))
     doc = add_phase_breakdown(doc, df_wkt)
     doc = add_tasks(doc, df_wkt)
