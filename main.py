@@ -80,16 +80,23 @@ def add_defined_terms(doc, df):
     return doc
 
 
+def set_cell_color(cell, color, text="auto"):
+        # https://github.com/python-openxml/python-docx/issues/55
+        from docx.oxml.shared import OxmlElement, qn
+        tc = cell._tc
+        tcPr = tc.tcPr
+        color_xml = OxmlElement('w:shd')
+        color_xml.set(qn('w:val'), 'clear')
+        color_xml.set(qn('w:color'), text)
+        color_xml.set(qn('w:fill'), color)
+        tcPr.append(color_xml)
+
+
 def add_tasks(doc, df):
     from docx.shared import Cm
     logger.debug(f'labels in task dataframe: {df.columns.values}')
-    doc.add_heading('Playbook content', level=1)
+    doc.add_heading('Tasks', level=1)
     df = df.reset_index()
-
-    # columns = df.columns
-    # doc.add_heading('Columns', level=2)
-    # for c in columns:
-    #     doc.add_paragraph(c)
 
     def add_single_task_layout(tbl, df_row):
         rows = [tbl.add_row() for _ in range(4)]
@@ -112,24 +119,12 @@ def add_tasks(doc, df):
                 rows[offset].cells[4].text = ""
         return tbl
 
-    def set_cell_color(cell, color, text="auto"):
-        # https://github.com/python-openxml/python-docx/issues/55
-        from docx.oxml.shared import OxmlElement, qn
-        tc = cell._tc
-        tcPr = tc.tcPr
-        color_xml = OxmlElement('w:shd')
-        color_xml.set(qn('w:val'), 'clear')
-        color_xml.set(qn('w:color'), text)
-        color_xml.set(qn('w:fill'), color)
-        tcPr.append(color_xml)
-
     different = df.ne(df.shift())
-    logger.debug(different.head())
-    doc.add_heading('Tasks', level=2)
+    # logger.debug(different.head())
     i = 0
-    while i < df.shape[0] and i < 10:
+    while i < df.shape[0]:
         if different.loc[i, "Phase"]:
-            doc.add_paragraph(df.loc[i, "Phase"], style="Heading 3")
+            doc.add_paragraph(df.loc[i, "Phase"], style="Heading 2")
 
         tbl = doc.add_table(rows=3, cols=5)
         tbl.style = 'Table Grid'  # 'Light Shading Accent 1'
@@ -184,6 +179,44 @@ def add_tasks(doc, df):
         #     if different.iloc[i, j]:
         #         doc.add_paragraph(f'cell {i},{j}', style='cell reference')
         #         doc.add_paragraph(content)
+
+    return doc
+
+
+def add_phase_breakdown(doc, df):
+    from docx.shared import Cm
+    logger.debug(f'labels in task dataframe: {df.columns.values}')
+    doc.add_heading('Tasks by phase', level=1)
+
+    df = df.reset_index()
+    different = df.ne(df.shift())
+    i = 0
+    while i < df.shape[0]:
+        if different.loc[i, "Phase"]:
+            doc.add_paragraph(df.loc[i, "Phase"], style="Heading 2")
+
+        tbl = doc.add_table(rows=1, cols=0)
+        for width in [11, 2, 2]:
+            tbl.add_column(width=Cm(width))
+        tbl.style = 'Table Grid'  # 'Light Shading Accent 1'
+        tbl.cell(0, 0).text = "Task"
+        tbl.cell(0, 1).text = "ID"
+        tbl.cell(0, 2).text = "Page #"
+        for c in tbl._cells:
+            set_cell_color(c, '2F5496')
+            c.paragraphs[0].runs[0].font.color.rgb = RGBColor(0xff, 0xff, 0xff)
+
+        n = 1
+        try:
+            while not different.loc[i + n, "Phase"]:
+                r = tbl.add_row()
+                r.cells[0].text = df.loc[i + n, "Task (label in flowchart)"]
+                r.cells[1].text = str(df.loc[i + n, "Reference #"])
+                n += 1
+        except KeyError:  # End of the table.
+            pass
+        i += n
+        doc.add_page_break()
 
     return doc
 
@@ -274,10 +307,11 @@ if __name__ == '__main__':
     #
     doc = docx.Document()
     # doc.styles.add_style('cell reference', WD_STYLE_TYPE.PARAGRAPH)
-    doc = add_acronyms(doc, df_wkt, lookup=acronyms)
-    doc = add_defined_terms(doc, df)
-    doc = add_comments(doc, df_wkt, extract_comments('playbook_wkt.xlsx'))
-    doc = add_tasks(doc, df_wkt)
+    doc = add_phase_breakdown(doc, df_wkt)
+    # doc = add_acronyms(doc, df_wkt, lookup=acronyms)
+    # doc = add_defined_terms(doc, df)
+    # doc = add_comments(doc, df_wkt, extract_comments('playbook_wkt.xlsx'))
+    # doc = add_tasks(doc, df_wkt)
     doc.save('playbook.docx')
 
     # extract_comments('playbook_wkt.xlsx')
