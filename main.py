@@ -3,7 +3,7 @@ import re
 import pandas as pd
 import docx
 import logging
-from docx.shared import RGBColor
+from docx.shared import RGBColor, Cm
 from util_functions import add_bookmark, add_bookmark_pageref, set_cell_color, add_bookmark_ref
 
 logging.basicConfig(level=logging.DEBUG)
@@ -181,9 +181,101 @@ def add_tasks(doc, df):
     return doc
 
 
+def add_theme_breakdown(doc, df):
+    logger = logging.getLogger('playbook.theme')
+    logger.setLevel(logging.DEBUG)
+    doc.add_heading('Tasks by theme', level=1)
+    themes = df['Theme'].unique()
+    df = df.reset_index()
+
+    def add_task_reference(tbl, df, index):
+        r = tbl.add_row()
+        r.cells[2].text = df.loc[index, "Task (label in flowchart)"]
+        add_bookmark_ref(r.cells[0].paragraphs[0], str(df.loc[index, "Reference #"]))
+        add_bookmark_pageref(r.cells[1].paragraphs[0], str(df.loc[index, "Reference #"]))
+        r.cells[3].text = df.loc[index, "Senior AM"]
+        r.cells[4].text = df.loc[index, "AM Tech PM"]
+        r.cells[5].text = df.loc[index, "Asset Information Coordinator"]
+        r.cells[6].text = df.loc[index, "ARQTS"]
+
+    columns = [
+        ('Ref #', 1.5),
+        ('Page', 1.5),
+        ('Task', 9),
+        ('Sr AM', 1.5),
+        ('AM TPM', 1.5),
+        ('AIC', 1.5),
+        ('ARQTS', 1.5)
+    ]
+    for theme in themes:
+        df_theme = df[df['Theme'] == theme]
+        doc.add_heading(theme, level=2)
+        tbl = smartly_add_table(doc, columns)
+
+        for i in df_theme.index.values:
+            add_task_reference(tbl, df_theme, i)
+        doc.add_page_break()
+
+    return doc
+
+
+def add_role_breakdown(doc, df):
+    logger = logging.getLogger('playbook.role')
+    logger.setLevel(logging.DEBUG)
+    doc.add_heading('Tasks by role', level=1)
+    roles = ['Senior AM', 'AM Tech PM', 'Asset Information Coordinator', 'ARQTS']
+
+    df = df.reset_index()
+
+    def add_task_reference(tbl, df, index, role):
+        r = tbl.add_row()
+        r.cells[2].text = df.loc[index, "Task (label in flowchart)"]
+        add_bookmark_ref(r.cells[0].paragraphs[0], str(df.loc[index, "Reference #"]))
+        add_bookmark_pageref(r.cells[1].paragraphs[0], str(df.loc[index, "Reference #"]))
+        r.cells[3].text = df.loc[index, role]
+
+    for role in roles:
+        columns = [
+            ('Ref #', 1.5),
+            ('Page', 1.5),
+            ('Task', 9.5),
+            (role, 3),
+        ]
+
+        df_role = df[df[role] != '']
+        doc.add_heading(role, level=2)
+        tbl = smartly_add_table(doc, columns)
+
+        for i in df_role.index.values:
+            add_task_reference(tbl, df_role, i, role)
+        doc.add_page_break()
+
+    return doc
+
+
+def smartly_add_table(doc, columns):
+    """
+    Add a table with headers and defined column width. Apply document style too.
+    :param doc:
+    :param columns: List of tubples with ('column name', int) with int == width in cm.
+    :return: newly created table reference
+    """
+
+    tbl = doc.add_table(rows=1, cols=0)
+    for _, width in columns:
+        tbl.add_column(width=Cm(width))
+    tbl.style = 'Table Grid'  # 'Light Shading Accent 1'
+    for col_def, cell in zip(columns, tbl.rows[0].cells):
+        label, _ = col_def
+        set_cell_color(cell, '2F5496')
+        cell.text = label
+        cell.paragraphs[0].runs[0].font.color.rgb = RGBColor(0xff, 0xff, 0xff)
+
+    return tbl
+
+
 def add_phase_breakdown(doc, df):
-    from docx.shared import Cm
-    logger.debug(f'labels in task dataframe: {df.columns.values}')
+    # from docx.shared import Cm
     doc.add_heading('Tasks by phase', level=1)
 
     df = df.reset_index()
@@ -193,7 +285,6 @@ def add_phase_breakdown(doc, df):
         if different.loc[i, "Phase"]:
             doc.add_paragraph(df.loc[i, "Phase"], style="Heading 2")
 
-        tbl = doc.add_table(rows=1, cols=0)
         columns = [
             ('Ref #', 1.5),
             ('Page', 1.5),
@@ -203,14 +294,7 @@ def add_phase_breakdown(doc, df):
             ('AIC', 1.5),
             ('ARQTS', 1.5)
         ]
-        for _, width in columns:
-            tbl.add_column(width=Cm(width))
-        tbl.style = 'Table Grid'  # 'Light Shading Accent 1'
-        for col_def, cell in zip(columns, tbl.rows[0].cells):
-            label, _ = col_def
-            set_cell_color(cell, '2F5496')
-            cell.text = label
-            cell.paragraphs[0].runs[0].font.color.rgb = RGBColor(0xff, 0xff, 0xff)
+        tbl = smartly_add_table(doc, columns)
 
         def add_task_reference(index):
             r = tbl.add_row()
@@ -306,7 +390,9 @@ if __name__ == '__main__':
     # doc = add_defined_terms(doc, df_wkt)
     doc = add_tasks(doc, df_wkt)
     doc = add_phase_breakdown(doc, df_wkt)
-    doc = add_comments(doc, df_wkt, extract_comments('playbook_wkt.xlsx'))
+    doc = add_theme_breakdown(doc, df_wkt)
+    doc = add_role_breakdown(doc, df_wkt)
+    # doc = add_comments(doc, df_wkt, extract_comments('playbook_wkt.xlsx'))
     doc.save('playbook.docx')
 
     # extract_comments('playbook_wkt.xlsx')
