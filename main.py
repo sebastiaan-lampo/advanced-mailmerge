@@ -1,17 +1,29 @@
-# This is a sample Python script.
-
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 import re
 
 import pandas as pd
 import docx
 import logging
-import numpy as np
 from docx.shared import RGBColor
+from util_functions import add_bookmark, add_bookmark_pageref, set_cell_color, add_bookmark_ref
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('playbook')
+
+
+def apply_style(cell, style):
+    styles = {
+        # Color, Text Color, Bold?
+        'Header': ('2F5496', 'FFFFFF', True),
+        'Subheader': ('4B84E8', 'FFFFFF', False),
+        'Subsubheader': ('BDBDBD', '000000', False)
+    }
+    assert style in styles
+    c, tc, bold = styles[style]
+    set_cell_color(cell, c)
+    for p in cell.paragraphs:
+        for r in p.runs:
+            r.font.bold = bold
+            r.font.color.rgb = RGBColor.from_string(tc)
 
 
 def load_data(filename, sheet=None):
@@ -80,18 +92,6 @@ def add_defined_terms(doc, df):
     return doc
 
 
-def set_cell_color(cell, color, text="auto"):
-        # https://github.com/python-openxml/python-docx/issues/55
-        from docx.oxml.shared import OxmlElement, qn
-        tc = cell._tc
-        tcPr = tc.tcPr
-        color_xml = OxmlElement('w:shd')
-        color_xml.set(qn('w:val'), 'clear')
-        color_xml.set(qn('w:color'), text)
-        color_xml.set(qn('w:fill'), color)
-        tcPr.append(color_xml)
-
-
 def add_tasks(doc, df):
     from docx.shared import Cm
     logger.debug(f'labels in task dataframe: {df.columns.values}')
@@ -104,13 +104,21 @@ def add_tasks(doc, df):
             r.AllowBreakAcrossPages = False
 
         rows[0].cells[0].merge(rows[3].cells[2])
-        rows[0].cells[0].text = f'{df_row["Reference #"]}. {df_row["Task (label in flowchart)"]}'
-        rows[0].cells[0].paragraphs[0].runs[0].font.bold = True
+        p = rows[0].cells[0].paragraphs[0]
+        add_bookmark(p, str(df_row["Reference #"]), str(df_row["Reference #"]))
+        p.add_run(f'. {df_row["Task (label in flowchart)"]}')
+        # rows[0].cells[0].text = f'{df_row["Reference #"]}. {df_row["Task (label in flowchart)"]}'
+        for r in p.runs:
+            r.font.bold = True
+        # rows[0].cells[0].paragraphs[0].runs[0].font.bold = True
         rows[0].cells[0].add_paragraph(df_row["Considerations"])
         if df_row["Contract model considerations"] != "Independent of delivery model.":
             p = rows[0].cells[0].add_paragraph(f'Contract model considerations')
             p.add_run(f': {df_row["Contract model considerations"]}')
             p.runs[0].font.bold = True
+        for p in rows[0].cells[0].paragraphs:
+            p.paragraph_format.keep_together = True
+            p.paragraph_format.keep_with_next = True
 
         for offset, col in enumerate(['SDL', 'AMC', 'AIC', 'ARQTS']):
             rows[offset].cells[3].text = col
@@ -126,27 +134,26 @@ def add_tasks(doc, df):
         if different.loc[i, "Phase"]:
             doc.add_paragraph(df.loc[i, "Phase"], style="Heading 2")
 
-        tbl = doc.add_table(rows=3, cols=5)
+        tbl = doc.add_table(rows=3, cols=0)
+        widths = [2, 5, 5, 2, 1]
+        for w in widths:
+            tbl.add_column(width=Cm(w))
+
         tbl.style = 'Table Grid'  # 'Light Shading Accent 1'
         tbl.cell(0, 0).text = "Goal"
-        tbl.cell(0, 0).paragraphs[0].runs[0].font.bold = True
         tbl.cell(0, 1).merge(tbl.cell(0, 4))
         tbl.cell(0, 1).text = df.loc[i, "Goal / Risk"]
-        tbl.cell(0, 1).paragraphs[0].runs[0].font.bold = True
         tbl.cell(1, 0).text = "Objective"
         tbl.cell(1, 1).merge(tbl.cell(1, 4))
         tbl.cell(1, 1).text = df.loc[i, "Objective"]
         tbl.cell(2, 0).merge(tbl.cell(2, 4))
         tbl.cell(2, 0).text = "Tasks and RACI"
 
-        set_cell_color(tbl.cell(0, 0), '2F5496')
-        set_cell_color(tbl.cell(0, 1), '2F5496')
-        set_cell_color(tbl.cell(1, 0), '4B84E8')
-        set_cell_color(tbl.cell(1, 1), '4B84E8')
-        set_cell_color(tbl.cell(2, 0), 'BDBDBD')
-        for _ in range(2):
-            for __ in range(2):
-                tbl.cell(_, __).paragraphs[0].runs[0].font.color.rgb = RGBColor(0xff, 0xff, 0xff)
+        apply_style(tbl.cell(0, 0), 'Header')
+        apply_style(tbl.cell(0, 1), 'Header')
+        apply_style(tbl.cell(1, 0), 'Subheader')
+        apply_style(tbl.cell(1, 1), 'Subheader')
+        apply_style(tbl.cell(2, 0), 'Subsubheader')
 
         tbl = add_single_task_layout(tbl, df.iloc[i, :])
 
@@ -159,27 +166,11 @@ def add_tasks(doc, df):
             pass
         i += n
 
+        # Word seems to ignore this property for merged cells, unfortunately.
         for r in tbl.rows:
             r.AllowBreakAcrossPages = False
 
-        # widths = [2, 5, 5, 2, 1]
-        # for _, w in enumerate(widths):
-        #     tbl.columns[_].width = Cm(w)
-
         doc.add_paragraph()
-
-        # _ = i
-        # while not different.loc[_ + 1, "Objective"]:
-
-        # for j in range(df.shape[1]):
-        #     content = df.iloc[i, j]
-        #     if content == "nan":
-        #         continue
-        #
-        #     if different.iloc[i, j]:
-        #         doc.add_paragraph(f'cell {i},{j}', style='cell reference')
-        #         doc.add_paragraph(content)
-
     return doc
 
 
@@ -206,12 +197,21 @@ def add_phase_breakdown(doc, df):
             set_cell_color(c, '2F5496')
             c.paragraphs[0].runs[0].font.color.rgb = RGBColor(0xff, 0xff, 0xff)
 
+        def add_task_reference(index):
+            r = tbl.add_row()
+            r.cells[0].text = df.loc[index, "Task (label in flowchart)"]
+            add_bookmark_ref(r.cells[1].paragraphs[0], str(df.loc[index, "Reference #"]))
+            add_bookmark_pageref(r.cells[2].paragraphs[0], str(df.loc[index, "Reference #"]))
+
+        add_task_reference(i)
         n = 1
         try:
             while not different.loc[i + n, "Phase"]:
-                r = tbl.add_row()
-                r.cells[0].text = df.loc[i + n, "Task (label in flowchart)"]
-                r.cells[1].text = str(df.loc[i + n, "Reference #"])
+                add_task_reference(i + n)
+                # r = tbl.add_row()
+                # r.cells[0].text = df.loc[i + n, "Task (label in flowchart)"]
+                # add_bookmark_ref(r.cells[1].paragraphs[0], str(df.loc[i + n, "Reference #"]))
+                # add_bookmark_pageref(r.cells[2].paragraphs[0], str(df.loc[i + n, "Reference #"]))
                 n += 1
         except KeyError:  # End of the table.
             pass
@@ -307,11 +307,11 @@ if __name__ == '__main__':
     #
     doc = docx.Document()
     # doc.styles.add_style('cell reference', WD_STYLE_TYPE.PARAGRAPH)
+    doc = add_acronyms(doc, df_wkt, lookup=acronyms)
+    doc = add_defined_terms(doc, df)
+    doc = add_comments(doc, df_wkt, extract_comments('playbook_wkt.xlsx'))
     doc = add_phase_breakdown(doc, df_wkt)
-    # doc = add_acronyms(doc, df_wkt, lookup=acronyms)
-    # doc = add_defined_terms(doc, df)
-    # doc = add_comments(doc, df_wkt, extract_comments('playbook_wkt.xlsx'))
-    # doc = add_tasks(doc, df_wkt)
+    doc = add_tasks(doc, df_wkt)
     doc.save('playbook.docx')
 
     # extract_comments('playbook_wkt.xlsx')
