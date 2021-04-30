@@ -176,6 +176,8 @@ def add_tasks(doc, df):
             r.AllowBreakAcrossPages = False
 
         doc.add_paragraph()
+
+    doc.add_page_break()
     return doc
 
 
@@ -192,21 +194,33 @@ def add_phase_breakdown(doc, df):
             doc.add_paragraph(df.loc[i, "Phase"], style="Heading 2")
 
         tbl = doc.add_table(rows=1, cols=0)
-        for width in [11, 2, 2]:
+        columns = [
+            ('Ref #', 1.5),
+            ('Page', 1.5),
+            ('Task', 9),
+            ('Sr AM', 1.5),
+            ('AM TPM', 1.5),
+            ('AIC', 1.5),
+            ('ARQTS', 1.5)
+        ]
+        for _, width in columns:
             tbl.add_column(width=Cm(width))
         tbl.style = 'Table Grid'  # 'Light Shading Accent 1'
-        tbl.cell(0, 0).text = "Task"
-        tbl.cell(0, 1).text = "ID"
-        tbl.cell(0, 2).text = "Page #"
-        for c in tbl._cells:
-            set_cell_color(c, '2F5496')
-            c.paragraphs[0].runs[0].font.color.rgb = RGBColor(0xff, 0xff, 0xff)
+        for col_def, cell in zip(columns, tbl.rows[0].cells):
+            label, _ = col_def
+            set_cell_color(cell, '2F5496')
+            cell.text = label
+            cell.paragraphs[0].runs[0].font.color.rgb = RGBColor(0xff, 0xff, 0xff)
 
         def add_task_reference(index):
             r = tbl.add_row()
-            r.cells[0].text = df.loc[index, "Task (label in flowchart)"]
-            add_bookmark_ref(r.cells[1].paragraphs[0], str(df.loc[index, "Reference #"]))
-            add_bookmark_pageref(r.cells[2].paragraphs[0], str(df.loc[index, "Reference #"]))
+            r.cells[2].text = df.loc[index, "Task (label in flowchart)"]
+            add_bookmark_ref(r.cells[0].paragraphs[0], str(df.loc[index, "Reference #"]))
+            add_bookmark_pageref(r.cells[1].paragraphs[0], str(df.loc[index, "Reference #"]))
+            r.cells[3].text = df.loc[index, "Senior AM"]
+            r.cells[4].text = df.loc[index, "AM Tech PM"]
+            r.cells[5].text = df.loc[index, "Asset Information Coordinator"]
+            r.cells[6].text = df.loc[index, "ARQTS"]
 
         add_task_reference(i)
         n = 1
@@ -272,38 +286,18 @@ def add_comments(doc, df, comments):
 
 
 if __name__ == '__main__':
-    from docx.enum.style import WD_STYLE_TYPE
-
-    df = load_data('playbook_wkt.xlsx', 'Detail')
     df_wkt = load_data('playbook_wkt.xlsx', 'WKT')
     acronyms = load_data('playbook_wkt.xlsx', 'Acronyms')
 
-    df = df.set_index(keys='Reference #')
     df_wkt = df_wkt.set_index(keys='Reference #')
     acronyms = acronyms.set_index(keys='Acronym')
 
-    df = df.astype(str)
-    df = df.applymap(lambda s: "" if s == 'nan' else s)
     df_wkt = df_wkt.astype(str)
     df_wkt = df_wkt.applymap(lambda s: "" if s == 'nan' else s)
     acronyms = acronyms.astype(str)
     acronyms = acronyms.applymap(lambda s: "" if s == 'nan' else s)
-    # df = df.astype(str)
-    # df_wkt = df_wkt.astype(str)
-    # acronyms = acronyms.astype(str)
 
     logger.debug(df_wkt.head())
-
-    diff = df.ne(df_wkt)
-    logger.info(f'Total differences: {diff.sum()}')
-    logger.info('Differences on phases:')
-    logger.info(df[diff.loc[:, 'Contract model considerations']])
-    logger.info(df_wkt[diff.loc[:, 'Contract model considerations']])
-
-    for i in range(10, diff.shape[0]):
-        if diff.iloc[i, 1]:
-            logger.info(f'First difference in reference number on row {i + 1}')
-            break
 
     #
     doc = docx.Document()
