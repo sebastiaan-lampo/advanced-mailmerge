@@ -33,7 +33,7 @@ def load_data(filename, sheet=None):
 
 
 def add_acronyms(doc, df, lookup):
-    acronyms = {'SDL', 'AMC', 'AIC', 'ARQTS'}
+    acronyms = {'Sr AM', 'AM TPM', 'AIC', 'ARQTS'}
     for i in range(df.shape[0]):
         for j in range(df.shape[1]):
             content = str(df.iloc[i, j])
@@ -120,7 +120,7 @@ def add_tasks(doc, df):
             p.paragraph_format.keep_together = True
             p.paragraph_format.keep_with_next = True
 
-        for offset, col in enumerate(['SDL', 'AMC', 'AIC', 'ARQTS']):
+        for offset, col in enumerate(['Sr AM', 'AM TPM', 'AIC', 'ARQTS']):
             rows[offset].cells[3].text = col
             rows[offset].cells[4].text = df_row.iloc[len(df_row.index.values) - 4 + offset]
             if rows[offset].cells[4].text == "nan":
@@ -208,10 +208,6 @@ def add_phase_breakdown(doc, df):
         try:
             while not different.loc[i + n, "Phase"]:
                 add_task_reference(i + n)
-                # r = tbl.add_row()
-                # r.cells[0].text = df.loc[i + n, "Task (label in flowchart)"]
-                # add_bookmark_ref(r.cells[1].paragraphs[0], str(df.loc[i + n, "Reference #"]))
-                # add_bookmark_pageref(r.cells[2].paragraphs[0], str(df.loc[i + n, "Reference #"]))
                 n += 1
         except KeyError:  # End of the table.
             pass
@@ -226,13 +222,13 @@ def new_info_only_sheet(filename, df):
 
     # df = df.set_index(keys='Reference #')
     different = df[df.ne(df.shift())]
-    # for c in ['Senior Design Lead', 'AM Construction', 'Asset Information Coordinator', 'ARQ']:
-    #     different[c] = df.loc[:, c]
+    for c in ['Senior AM', 'AM Tech PM', 'Asset Information Coordinator', 'ARQTS']:
+        different[c] = df.loc[:, c]
 
     # Last 4/5 columns should be carried entirely, they are the RACI. Adjust number as needed.
     # NOT RELIABLE. Columns could be ordered differently.
-    for c in range(5):
-        different.iloc[:, different.shape[1] - c-1] = df.iloc[:, different.shape[1] - c-1]
+    # for c in range(5):
+    #     different.iloc[:, different.shape[1] - c-1] = df.iloc[:, different.shape[1] - c-1]
 
     logger.info(different.columns.values)
     with pd.ExcelWriter(filename, mode='w') as writer:
