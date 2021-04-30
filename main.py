@@ -112,6 +112,7 @@ def add_tasks(doc, df):
         return tbl
 
     def set_cell_color(cell, color, text="auto"):
+        # https://github.com/python-openxml/python-docx/issues/55
         from docx.oxml.shared import OxmlElement, qn
         tc = cell._tc
         tcPr = tc.tcPr
@@ -139,15 +140,14 @@ def add_tasks(doc, df):
         tbl.cell(1, 0).text = "Objective:"
         tbl.cell(1, 1).merge(tbl.cell(1, 4))
         tbl.cell(1, 1).text = df.loc[i, "Objective"]
-        tbl.cell(2, 1).merge(tbl.cell(2, 5))
-        tbl.cell(2, 1).text = "Tasks and RACI"
+        tbl.cell(2, 0).merge(tbl.cell(2, 4))
+        tbl.cell(2, 0).text = "Tasks and RACI"
 
         set_cell_color(tbl.cell(0, 0), '2F5496', 'FFFFFF')
         set_cell_color(tbl.cell(0, 1), '2F5496', 'FFFFFF')
+        set_cell_color(tbl.cell(1, 0), '4B84E8', 'FFFFFF')
         set_cell_color(tbl.cell(1, 1), '4B84E8', 'FFFFFF')
-        set_cell_color(tbl.cell(1, 1), '4B84E8', 'FFFFFF')
-        set_cell_color(tbl.cell(2, 1), 'BDBDBD')
-        set_cell_color(tbl.cell(2, 1), 'BDBDBD')
+        set_cell_color(tbl.cell(2, 0), 'BDBDBD')
 
         tbl = add_single_task_layout(tbl, df.iloc[i, :])
 
