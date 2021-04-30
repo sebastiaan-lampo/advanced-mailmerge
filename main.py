@@ -84,7 +84,7 @@ def add_defined_terms(doc, df):
 
     doc.add_heading('Capitalized sequences')
     for a in defined_terms:
-        p = doc.add_paragraph('', style='List Bullet')
+        p = doc.add_paragraph('')
         r = p.add_run(a)
         # r.font.bold = True
         # try:
@@ -309,10 +309,10 @@ if __name__ == '__main__':
     doc = docx.Document()
     # doc.styles.add_style('cell reference', WD_STYLE_TYPE.PARAGRAPH)
     doc = add_acronyms(doc, df_wkt, lookup=acronyms)
-    doc = add_defined_terms(doc, df_wkt)
-    doc = add_comments(doc, df_wkt, extract_comments('playbook_wkt.xlsx'))
-    doc = add_phase_breakdown(doc, df_wkt)
+    # doc = add_defined_terms(doc, df_wkt)
     doc = add_tasks(doc, df_wkt)
+    doc = add_phase_breakdown(doc, df_wkt)
+    doc = add_comments(doc, df_wkt, extract_comments('playbook_wkt.xlsx'))
     doc.save('playbook.docx')
 
     # extract_comments('playbook_wkt.xlsx')
