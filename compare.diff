@@ -1,0 +1,91 @@
+--- simple/docProps/app.xml
+
++++ colored/docProps/app.xml
+
+@@ -4,7 +4,7 @@
+
+     xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"
+     >
+   <Template>Normal.dotm</Template>
+-  <TotalTime>0</TotalT
+ime>
++  <TotalTime>1</TotalTime>
+   <Pages>1</Pages>
+   <Words>1</Words>
+   <Characters>6</Characters>
+
+--- simple/docProps/core.xml
+
++++ colored/docProps/core.xml
+
+@@ -12,7 +12,7 @@
+
+   <cp:keywords/>
+   <dc:description/>
+
+  <cp:lastModifiedBy>Sebastiaan Lampo</cp:lastModifiedBy>
+-  <cp:revision>1</cp:revision>
+-  <dcterms:created xsi:type="dcterms:W3CDTF">2021-04-30T01:30:00Z</dcterms:created>
+-  <dcterms:modified xsi:type="dcterms:W3CDTF">2021-04-30T01
+:30:00Z</dcterms:modified>
++  <cp:revision>2</cp:revision>
++  <dcterms:created xsi:type="dcterms:W3CDTF">2021-04-30T01:31:00Z</dcterms:created>
++  <dcterms:modified xsi:type="dcterms:W3CDTF">2021-04-30T01:31:00Z</dcterms:modified>
+ </
+cp:coreProperties>
+
+--- simple/word/document.xml
+
++++ colored/word/document.xml
+
+@@ -45,16 +45,18 @@
+
+         <w:gridCol w:w="4675"/>
+         <w:gridCol w:w="4675"/>
+       </w:tblGrid>
+-      <w:tr w:rsidR="00F02D3E" w14:par
+aId="64652428" w14:textId="77777777" w:rsidTr="00F02D3E">
++      <w:tr w:rsidR="00F02D3E" w14:paraId="64652428" w14:textId="77777777" w:rsidTr="00AA762A">
+         <w:tc>
+           <w:tcPr>
+             <w:tcW w:w="4675" w:type="dxa"/>
++            <w:shd w:val="clear" w:color="auto" w:fill="2F5496" w:themeFill="accent1" w:themeFillShade="BF"/>
+           </w:tcPr>
+           <w:p w14:paraId="370E773D" w14:textId="77777777" w:rsidR="00F02D3E" w:rsidRDefault="00F02
+D3E"/>
+         </w:tc>
+         <w:tc>
+           <w:tcPr>
+             <w:tcW w:w="4675" w:type="dxa"/>
++            <w:shd w:val="clear" w:color="auto" w:fill="2F5496" w:themeFill="accent1" w:themeFillShade="BF"/>
+           </w:
+tcPr>
+           <w:p w14:paraId="410127EA" w14:textId="77777777" w:rsidR="00F02D3E" w:rsidRDefault="00F02D3E"/>
+         </w:tc>
+@@ -74,7 +76,7 @@
+
+         </w:tc>
+       </w:tr>
+     </w:tbl>
+-    <w:p w14:paraId="4C714F3C" w14
+:textId="77777777" w:rsidR="00861CA1" w:rsidRDefault="00F02D3E"/>
++    <w:p w14:paraId="4C714F3C" w14:textId="77777777" w:rsidR="00861CA1" w:rsidRDefault="00AA762A"/>
+     <w:sectPr w:rsidR="00861CA1">
+       <w:pgSz w:w="12240" w:h="1
+5840"/>
+       <w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="708" w:footer="708" w:gutter="0"/>
+
+--- simple/word/settings.xml
+
++++ colored/word/settings.xml
+
+@@ -32,6 +32,7 @@
+
+   <w:rsids>
+     <w
+:rsidRoot w:val="00F02D3E"/>
+     <w:rsid w:val="007212E7"/>
++    <w:rsid w:val="00AA762A"/>
+     <w:rsid w:val="00E828A4"/>
+     <w:rsid w:val="00F02D3E"/>
+   </w:rsids>
