@@ -325,7 +325,8 @@ def new_info_only_sheet(filename, df):
 
     # df = df.set_index(keys='Reference #')
     different = df[df.ne(df.shift())]
-    for c in ['Contract model considerations', 'Senior AM', 'AM Tech PM', 'Asset Information Coordinator', 'ARQTS']:
+    for c in ['Contract model considerations', 'Senior AM', 'AM Tech PM', 'Asset Information Coordinator', 'ARQTS',
+              'Considerations', 'Contract model considerations']:
         different[c] = df.loc[:, c]
 
     # Last 4/5 columns should be carried entirely, they are the RACI. Adjust number as needed.
