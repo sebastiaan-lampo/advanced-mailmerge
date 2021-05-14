@@ -186,7 +186,7 @@ def add_tasks(doc, df):
 def add_theme_breakdown(doc, df):
     logger = logging.getLogger('playbook.theme')
     logger.setLevel(logging.DEBUG)
-    doc.add_heading('Tasks by theme', level=1)
+    doc.add_heading('Tasks by Theme', level=1)
     themes = df['Theme'].unique()
     df = df.reset_index()
 
@@ -225,7 +225,7 @@ def add_theme_breakdown(doc, df):
 def add_role_breakdown(doc, df):
     logger = logging.getLogger('playbook.role')
     logger.setLevel(logging.DEBUG)
-    doc.add_heading('Tasks by role', level=1)
+    doc.add_heading('Tasks by Role', level=1)
     roles = ['Senior AM', 'AM Tech PM', 'Asset Information Coordinator', 'ARQTS']
 
     df = df.reset_index()
@@ -280,7 +280,7 @@ def smartly_add_table(doc, columns):
 
 def add_phase_breakdown(doc, df):
     # from docx.shared import Cm
-    doc.add_heading('Tasks by phase', level=1)
+    doc.add_heading('Tasks by Phase', level=1)
 
     df = df.reset_index()
     different = df.ne(df.shift())
