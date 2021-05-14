@@ -4,6 +4,8 @@ import pandas as pd
 import docx
 import logging
 from docx.shared import RGBColor, Cm
+
+import util_functions
 from util_functions import add_bookmark, add_bookmark_pageref, set_cell_color, add_bookmark_ref
 
 logging.basicConfig(level=logging.DEBUG)
@@ -211,6 +213,7 @@ def add_theme_breakdown(doc, df):
         df_theme = df[df['Theme'] == theme]
         doc.add_heading(theme, level=2)
         tbl = smartly_add_table(doc, columns)
+        util_functions.set_repeat_table_header(tbl.rows[0])
 
         for i in df_theme.index.values:
             add_task_reference(tbl, df_theme, i)
@@ -245,6 +248,7 @@ def add_role_breakdown(doc, df):
         df_role = df[df[role] != '']
         doc.add_heading(role, level=2)
         tbl = smartly_add_table(doc, columns)
+        util_functions.set_repeat_table_header(tbl.rows[0])
 
         for i in df_role.index.values:
             add_task_reference(tbl, df_role, i, role)
@@ -295,6 +299,7 @@ def add_phase_breakdown(doc, df):
             ('ARQTS', 1.5)
         ]
         tbl = smartly_add_table(doc, columns)
+        util_functions.set_repeat_table_header(tbl.rows[0])
 
         def add_task_reference(index):
             r = tbl.add_row()
@@ -357,9 +362,9 @@ def add_comments(doc, df, comments):
     doc.add_heading('WKT Comments', level=2)
     for comment in comments:
         row, col, col_label, text = comment
-        row = row-1
+        row = row - 1
         p = doc.add_paragraph('', style='List Bullet')
-        r = p.add_run(f'Cell {chr(ord("@")+col)}{row+1} ({col_label}):')
+        r = p.add_run(f'Cell {chr(ord("@") + col)}{row + 1} ({col_label}):')
         r.font.bold = True
         r = p.add_run(text)
         r.add_break()
@@ -370,8 +375,33 @@ def add_comments(doc, df, comments):
     return doc
 
 
+def goal_objective_summary(df):
+    df = df.reset_index().groupby(['Phase', 'Goal / Risk', "Objective"], as_index=False)['Reference #'].count()
+    print(df)
+    with pd.ExcelWriter('test.xlsx', mode='w') as writer:
+        df.to_excel(writer, sheet_name='test')
+
+
+def find_multi_item_statements(df):
+    for i in range(df.shape[0]):
+        for j in range(df.shape[1]):
+            content = str(df.iloc[i, j])
+            if content == "nan":
+                continue
+
+            match = re.match('\(?(\d\))\D+', content)
+            res = re.sub('\(?(\d\))+', '\r\n\\1', content)
+            if match:
+                res = res[2:]
+                df.iloc[i, j] = res
+                # print(f'{i + 1},{j + 1}: {res}')
+    with pd.ExcelWriter('itemized.xlsx', mode='w') as writer:
+        df.to_excel(writer, sheet_name='itemized')
+    return df
+
+
 if __name__ == '__main__':
-    df_wkt = load_data('playbook_wkt.xlsx', 'WKT')
+    df_wkt = load_data('playbook_wkt.xlsx', 'Detail')
     acronyms = load_data('playbook_wkt.xlsx', 'Acronyms')
 
     df_wkt = df_wkt.set_index(keys='Reference #')
@@ -384,13 +414,16 @@ if __name__ == '__main__':
 
     logger.debug(df_wkt.head())
 
-    #
+    # Split (1) and (2) statements into multiline numbered paragraphs in the excel.
+    # df_wkt = find_multi_item_statements(df_wkt)
+
+    # Produce the content for the playbook
     doc = docx.Document()
     # doc.styles.add_style('cell reference', WD_STYLE_TYPE.PARAGRAPH)
     doc = add_acronyms(doc, df_wkt, lookup=acronyms)
-    # doc = add_defined_terms(doc, df_wkt)
-    doc = add_phase_breakdown(doc, df_wkt)
+    doc = add_defined_terms(doc, df_wkt)
     doc = add_tasks(doc, df_wkt)
+    doc = add_phase_breakdown(doc, df_wkt)
     doc = add_theme_breakdown(doc, df_wkt)
     doc = add_role_breakdown(doc, df_wkt)
     # doc = add_comments(doc, df_wkt, extract_comments('playbook_wkt.xlsx'))
@@ -398,3 +431,4 @@ if __name__ == '__main__':
 
     # extract_comments('playbook_wkt.xlsx')
     new_info_only_sheet('playbook_new.xlsx', df_wkt)
+    goal_objective_summary(df_wkt)

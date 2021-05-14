@@ -87,3 +87,14 @@ def set_cell_color(cell, color):
     # color_xml.set(qn('w:color'), text)
     color_xml.set(qn('w:fill'), color)
     tcPr.append(color_xml)
+
+
+def set_repeat_table_header(row):
+    """ set repeat table row on every new page
+    """
+    tr = row._tr
+    trPr = tr.get_or_add_trPr()
+    tblHeader = OxmlElement('w:tblHeader')
+    tblHeader.set(qn('w:val'), "true")
+    trPr.append(tblHeader)
+    return row
