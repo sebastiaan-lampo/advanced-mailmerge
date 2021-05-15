@@ -142,7 +142,7 @@ def add_tasks(doc, df):
             doc.add_paragraph(df.loc[i, "Phase"], style="Heading 2")
 
         tbl = doc.add_table(rows=3, cols=0)
-        widths = [2, 5, 5, 2, 1]
+        widths = [2, 5, 6.5, 2, 1]
         for w in widths:
             tbl.add_column(width=Cm(w))
 
@@ -420,8 +420,8 @@ if __name__ == '__main__':
     # Produce the content for the playbook
     doc = docx.Document()
     # doc.styles.add_style('cell reference', WD_STYLE_TYPE.PARAGRAPH)
-    doc = add_acronyms(doc, df_wkt, lookup=acronyms)
-    doc = add_defined_terms(doc, df_wkt)
+    # doc = add_acronyms(doc, df_wkt, lookup=acronyms)
+    # doc = add_defined_terms(doc, df_wkt)
     doc = add_tasks(doc, df_wkt)
     doc = add_phase_breakdown(doc, df_wkt)
     doc = add_theme_breakdown(doc, df_wkt)
