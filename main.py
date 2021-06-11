@@ -390,7 +390,7 @@ def find_multi_item_statements(df):
                 continue
 
             match = re.match('\(?(\d\))\D+', content)
-            res = re.sub('\(?(\d\))+', '\r\n\\1', content)
+            res = re.sub('\(?(\d\))+', '\n\\1', content)
             if match:
                 res = res[2:]
                 df.iloc[i, j] = res
@@ -429,6 +429,7 @@ if __name__ == '__main__':
     # doc = add_comments(doc, df_wkt, extract_comments('playbook_wkt.xlsx'))
     doc.save('playbook.docx')
 
+    # Generate alternative excels
     # extract_comments('playbook_wkt.xlsx')
-    new_info_only_sheet('playbook_new.xlsx', df_wkt)
     goal_objective_summary(df_wkt)
+    new_info_only_sheet('playbook_new.xlsx', df_wkt)
